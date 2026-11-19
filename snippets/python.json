@@ -1,0 +1,57 @@
+{
+  "Thalovant: a card on the reply": {
+    "prefix": "tcard",
+    "description": "Show a card on a screen while speaking (thalovant_skillkit.display)",
+    "body": [
+      "card = display.${1|text,list_card,weather|}(${2:\"${3:body}\"}, title=\"${4:Title}\",",
+      "                    identifier=f\"{self.skill_id}:${5:card}\",",
+      "                    actions=[display.action(\"${6:more}\", \"${7:More}\")])",
+      "with display.showing(card):",
+      "    self.speak_dialog(\"${8:dialog}\")$0"
+    ]
+  },
+  "Thalovant: answer a card's button": {
+    "prefix": "ttap",
+    "description": "Handle a tap on one of this skill's cards",
+    "body": [
+      "def initialize(self):",
+      "    self.add_display_action_handler(self.on_tap)",
+      "",
+      "def on_tap(self, tap, message):",
+      "    if tap.action == \"${1:more}\":",
+      "        self.speak_to(message, ${2:\"Here is more.\"})$0"
+    ]
+  },
+  "Thalovant: spell a code (SSML)": {
+    "prefix": "tspell",
+    "description": "Read a value one character at a time, in every language",
+    "body": ["self.speak_dialog(\"${1:code}\", {\"${2:code}\": spell(${3:value})})$0"]
+  },
+  "Thalovant: a word in another language (SSML)": {
+    "prefix": "tforeign",
+    "body": ["self.speak_to(message, say(${1:\"One\"}, foreign(${2:\"café au lait\"}, \"${3:fr-FR}\"), ${4:\"coming up.\"}))$0"]
+  },
+  "Thalovant: spoken and written": {
+    "prefix": "twritten",
+    "description": "Say one thing, show another (a time read aloud, written for a screen)",
+    "body": ["self.speak_to(message, ${1:spoken}, written=${2:written})$0"]
+  },
+  "Thalovant: padatious intent handler": {
+    "prefix": "tintent",
+    "body": [
+      "@intent_handler(\"${1:name}.intent\")",
+      "def handle_${2:name}(self, message):",
+      "    self.speak_dialog(\"${3:dialog}\")$0"
+    ]
+  },
+  "Thalovant: ask and wait for the answer": {
+    "prefix": "task",
+    "body": [
+      "answer = self.get_response(\"${1:ask.dialog}\")",
+      "if answer:",
+      "    self.speak_to(message, ${2:f\"{answer}, then.\"})",
+      "else:",
+      "    self.speak_dialog(\"${3:never.mind}\")$0"
+    ]
+  }
+}

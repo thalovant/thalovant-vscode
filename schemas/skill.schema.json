@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "locale/<lang>/skill.json",
+  "description": "What the skill is called in this language. Only translatable fields may differ from en-US.",
+  "type": "object",
+  "properties": {
+    "skill_id": { "type": "string", "description": "The repository name, the same in every locale." },
+    "name": { "type": "string", "description": "The skill's name in this language." },
+    "source": { "type": "string", "format": "uri", "description": "Where the skill's source lives; the same in every locale." },
+    "description": { "type": "string" },
+    "examples": { "type": "array", "items": { "type": "string" } }
+  }
+}

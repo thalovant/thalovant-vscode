@@ -1,0 +1,5 @@
+{"skill_id": "thalovant-skill-plant-care.thalovant", "utterance": "water the plants", "intent_label": "water.plants.intent", "lang": "en-US", "expected_messages": ["speak"]}
+{"skill_id": "thalovant-skill-plant-care.thalovant", "utterance": "which plants need water", "intent_label": "water.plants.intent", "lang": "en-US"}
+{"skill_id": "thalovant-skill-plant-care.thalovant", "utterance": "arrose les plantes", "intent_label": "water.plants.intent", "lang": "fr-FR"}
+{"skill_id": "thalovant-skill-plant-care.thalovant", "utterance": "name my plant", "intent_label": "water.plants.intent", "lang": "en-US"}
+{"skill_id": "thalovant-skill-plant-care.thalovant", "utterance": "what time is it", "lang": "en-US"}

@@ -1,0 +1,31 @@
+permissions:
+  contents: read
+
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    # 24.04, not ubuntu-latest: the OVOS stack's audio packages import
+    # PortAudio, and 26.04's 19.7 fails without a sound server.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --pre "thalovant-skillkit[testing]" pytest ruff
+      - run: ruff check --line-length 110 python test/python
+      - run: python -m pytest -q test/python
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test:unit
+        env:
+          THALOVANT_TEST_PYTHON: python
+      - run: npm run package

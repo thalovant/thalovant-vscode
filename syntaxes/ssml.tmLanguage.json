@@ -1,0 +1,26 @@
+{
+  "scopeName": "source.thalovant.ssml",
+  "name": "Thalovant SSML twin",
+  "patterns": [
+    { "name": "comment.line.number-sign", "match": "^\\s*#.*$" },
+    { "include": "#tags" },
+    { "name": "variable.parameter.slot", "match": "\\{\\s*[^{}\\s]+\\s*\\}" }
+  ],
+  "repository": {
+    "tags": {
+      "patterns": [
+        {
+          "begin": "(</?)([A-Za-z][\\w:-]*)",
+          "beginCaptures": { "1": { "name": "punctuation.definition.tag" }, "2": { "name": "entity.name.tag" } },
+          "end": "(/?>)",
+          "endCaptures": { "1": { "name": "punctuation.definition.tag" } },
+          "patterns": [
+            { "match": "([\\w:-]+)\\s*(=)", "captures": { "1": { "name": "entity.other.attribute-name" }, "2": { "name": "punctuation.separator.key-value" } } },
+            { "name": "string.quoted.double", "match": "\"[^\"]*\"" },
+            { "name": "string.quoted.single", "match": "'[^']*'" }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "locale/regional.json",
+  "description": "Regional wording: only the differences from the base locale. `thalovant-skillkit locales --write` builds the complete OVOS resources from it.",
+  "type": "object"
+}

@@ -1,0 +1,180 @@
+{
+  "name": "thalovant-skills",
+  "displayName": "Thalovant Skills",
+  "description": "Write a Thalovant skill and try it at once: a device simulator next to your code that runs the skill in a real OVOS core, shows what it says, writes and puts on a screen, plus SkillKit checks, golden utterances and locale intelligence.",
+  "version": "0.1.0",
+  "publisher": "thalovant",
+  "license": "Apache-2.0",
+  "icon": "media/icon.png",
+  "repository": { "type": "git", "url": "https://github.com/thalovant/thalovant-vscode" },
+  "engines": { "vscode": "^1.95.0" },
+  "categories": ["Programming Languages", "Testing", "Debuggers", "Other"],
+  "keywords": ["thalovant", "ovos", "open voice os", "voice assistant", "skill", "skillkit"],
+  "main": "./dist/extension.js",
+  "extensionDependencies": [],
+  "activationEvents": [
+    "workspaceContains:thalovant_skill_*/__init__.py",
+    "workspaceContains:*/thalovant_skill_*/__init__.py",
+    "workspaceContains:**/locale/supported.json"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "Running a skill executes its Python code, so the simulator, checks and tests need a trusted workspace. Locale completion, navigation and highlighting work everywhere."
+    },
+    "virtualWorkspaces": false
+  },
+  "contributes": {
+    "commands": [
+      { "command": "thalovant.newSkill", "title": "New Skill…", "category": "Thalovant", "icon": "$(add)" },
+      { "command": "thalovant.openSimulator", "title": "Open the Skill Simulator", "category": "Thalovant", "icon": "$(play-circle)" },
+      { "command": "thalovant.say", "title": "Say Something to the Skill…", "category": "Thalovant", "icon": "$(comment-discussion)" },
+      { "command": "thalovant.sayLine", "title": "Say This to the Skill", "category": "Thalovant" },
+      { "command": "thalovant.restartSkill", "title": "Restart the Skill", "category": "Thalovant", "icon": "$(debug-restart)" },
+      { "command": "thalovant.check", "title": "Check the Skill", "category": "Thalovant", "icon": "$(checklist)" },
+      { "command": "thalovant.checkFleet", "title": "Check the Skill Against the Fleet", "category": "Thalovant" },
+      { "command": "thalovant.writeLocales", "title": "Regenerate Regional Locales", "category": "Thalovant" },
+      { "command": "thalovant.addDialog", "title": "Add a Dialog to Every Locale…", "category": "Thalovant" },
+      { "command": "thalovant.selectPython", "title": "Choose the Skill's Python…", "category": "Thalovant" },
+      { "command": "thalovant.setupEnvironment", "title": "Set Up the Skill's Python Environment", "category": "Thalovant" },
+      { "command": "thalovant.showRunnerLog", "title": "Show the Skill Log", "category": "Thalovant", "icon": "$(output)" },
+      { "command": "thalovant.refreshOutline", "title": "Refresh", "category": "Thalovant", "icon": "$(refresh)" }
+    ],
+    "menus": {
+      "editor/title": [
+        { "command": "thalovant.openSimulator", "group": "navigation", "when": "thalovant.isSkill && resourceLangId =~ /^(python|thalovant-dialog|thalovant-vocab|thalovant-intent|thalovant-ssml|thalovant-rfw)$/" }
+      ],
+      "view/title": [
+        { "command": "thalovant.openSimulator", "when": "view == thalovant.outline", "group": "navigation@1" },
+        { "command": "thalovant.check", "when": "view == thalovant.outline", "group": "navigation@2" },
+        { "command": "thalovant.refreshOutline", "when": "view == thalovant.outline", "group": "navigation@3" }
+      ],
+      "commandPalette": [
+        { "command": "thalovant.sayLine", "when": "false" },
+        { "command": "thalovant.refreshOutline", "when": "false" },
+        { "command": "thalovant.openSimulator", "when": "thalovant.isSkill" },
+        { "command": "thalovant.say", "when": "thalovant.isSkill" },
+        { "command": "thalovant.restartSkill", "when": "thalovant.isSkill" },
+        { "command": "thalovant.check", "when": "thalovant.isSkill" },
+        { "command": "thalovant.checkFleet", "when": "thalovant.isSkill" },
+        { "command": "thalovant.writeLocales", "when": "thalovant.isSkill" },
+        { "command": "thalovant.addDialog", "when": "thalovant.isSkill" }
+      ]
+    },
+    "keybindings": [
+      { "command": "thalovant.openSimulator", "key": "ctrl+alt+v", "mac": "cmd+alt+v", "when": "thalovant.isSkill" },
+      { "command": "thalovant.say", "key": "ctrl+alt+s", "mac": "cmd+alt+s", "when": "thalovant.isSkill" }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        { "id": "thalovant", "title": "Thalovant", "icon": "media/activity.svg" }
+      ]
+    },
+    "views": {
+      "thalovant": [
+        { "id": "thalovant.outline", "name": "Skill", "icon": "media/activity.svg" }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "thalovant.outline",
+        "contents": "No Thalovant skill in this workspace yet.\n[New Skill…](command:thalovant.newSkill)\nA skill is a folder with a thalovant_skill_* package, as `thalovant-skillkit new` writes it. [Read the guide](https://docs.thalovant.com/developers/writing-a-skill)",
+        "when": "!thalovant.isSkill"
+      }
+    ],
+    "configuration": {
+      "title": "Thalovant",
+      "properties": {
+        "thalovant.python": {
+          "type": "string",
+          "default": "",
+          "scope": "resource",
+          "markdownDescription": "The Python that runs the skill (its tests' interpreter). Empty: the Python extension's choice, then `.venv` in the skill, then `python3`."
+        },
+        "thalovant.simulator.pipeline": {
+          "type": "string",
+          "enum": ["local", "m2v"],
+          "enumDescriptions": [
+            "Stop, converse, Adapt, Padatious and every fallback tier. Fast, no download.",
+            "Adds the fleet's model2vec classifier, the way the hub routes. Downloads the model on first use."
+          ],
+          "default": "local",
+          "description": "The intent stages a sentence walks through in the simulator."
+        },
+        "thalovant.simulator.reloadOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Restart the skill when one of its files is saved, keeping the conversation on screen."
+        },
+        "thalovant.simulator.languages": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "markdownDescription": "Languages the simulated hub loads, first one as the default. Empty: the skill's `locale/supported.json`."
+        },
+        "thalovant.simulator.location": {
+          "type": ["object", "null"],
+          "default": null,
+          "markdownDescription": "Location sent with every sentence, as a hub sends it in the message context (`name`, `coordinate`, `timezone`, `country_code`). The simulator also offers a few cities."
+        },
+        "thalovant.simulator.skillSettings": {
+          "type": "object",
+          "default": {},
+          "description": "Settings the simulated skill starts with (its settings.json), for keys, endpoints and switches."
+        },
+        "thalovant.simulator.speech": {
+          "type": "string",
+          "enum": ["off", "system"],
+          "enumDescriptions": ["Silent: read the replies.", "Read replies aloud with the system's speech synthesis, where the editor offers one."],
+          "default": "off",
+          "description": "Hear the replies in the simulator."
+        },
+        "thalovant.check.onSave": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Run `thalovant-skillkit check` (without the fleet) when a skill file is saved and show the problems in the Problems panel."
+        }
+      }
+    },
+    "languages": [
+      { "id": "thalovant-dialog", "aliases": ["Thalovant Dialog"], "extensions": [".dialog"], "configuration": "./syntaxes/resource.language-configuration.json" },
+      { "id": "thalovant-vocab", "aliases": ["Thalovant Vocabulary"], "extensions": [".voc", ".entity"], "configuration": "./syntaxes/resource.language-configuration.json" },
+      { "id": "thalovant-intent", "aliases": ["Thalovant Intent"], "extensions": [".intent"], "configuration": "./syntaxes/resource.language-configuration.json" },
+      { "id": "thalovant-ssml", "aliases": ["Thalovant SSML Twin"], "extensions": [".ssml"], "configuration": "./syntaxes/resource.language-configuration.json" },
+      { "id": "thalovant-rfw", "aliases": ["Remote Flutter Widgets"], "extensions": [".rfwtxt"], "configuration": "./syntaxes/rfw.language-configuration.json" }
+    ],
+    "grammars": [
+      { "language": "thalovant-dialog", "scopeName": "source.thalovant.resource", "path": "./syntaxes/resource.tmLanguage.json" },
+      { "language": "thalovant-vocab", "scopeName": "source.thalovant.resource", "path": "./syntaxes/resource.tmLanguage.json" },
+      { "language": "thalovant-intent", "scopeName": "source.thalovant.resource", "path": "./syntaxes/resource.tmLanguage.json" },
+      { "language": "thalovant-ssml", "scopeName": "source.thalovant.ssml", "path": "./syntaxes/ssml.tmLanguage.json" },
+      { "language": "thalovant-rfw", "scopeName": "source.thalovant.rfw", "path": "./syntaxes/rfw.tmLanguage.json" }
+    ],
+    "snippets": [
+      { "language": "python", "path": "./snippets/python.json" }
+    ],
+    "jsonValidation": [
+      { "fileMatch": "**/locale/supported.json", "url": "./schemas/supported.schema.json" },
+      { "fileMatch": "**/locale/regional.json", "url": "./schemas/regional.schema.json" },
+      { "fileMatch": "**/locale/*/skill.json", "url": "./schemas/skill.schema.json" }
+    ]
+  },
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "watch": "node tools/build.mjs --watch",
+    "typecheck": "tsc --noEmit -p .",
+    "test:unit": "node tools/build.mjs --tests && node --test out/test/unit/*.test.js",
+    "test:python": "python3 -m pytest -q test/python",
+    "test:integration": "node tools/build.mjs --tests && node out/test/integration/run.js",
+    "package": "node tools/build.mjs --production && vsce package --no-dependencies",
+    "vscode:prepublish": "node tools/build.mjs --production"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/vscode": "~1.95.0",
+    "@vscode/test-electron": "^2.4.1",
+    "@vscode/vsce": "^3.2.1",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.2"
+  }
+}

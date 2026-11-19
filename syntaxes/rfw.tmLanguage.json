@@ -1,0 +1,15 @@
+{
+  "scopeName": "source.thalovant.rfw",
+  "name": "Remote Flutter Widgets",
+  "patterns": [
+    { "name": "comment.line.double-slash", "match": "//.*$" },
+    { "name": "comment.block", "begin": "/\\*", "end": "\\*/" },
+    { "name": "keyword.control", "match": "\\b(import|widget|switch|default|set|event|args|data|state|loop)\\b" },
+    { "name": "string.quoted.double", "begin": "\"", "end": "\"", "patterns": [{ "name": "constant.character.escape", "match": "\\\\." }] },
+    { "name": "constant.numeric", "match": "\\b0x[0-9A-Fa-f]+\\b|-?\\b\\d+(\\.\\d+)?\\b" },
+    { "name": "constant.language", "match": "\\b(true|false|null)\\b" },
+    { "name": "entity.name.type", "match": "\\b[A-Z][A-Za-z0-9_]*\\b" },
+    { "name": "variable.other.property", "match": "\\b[a-z_][A-Za-z0-9_]*(?=\\s*:)" },
+    { "name": "punctuation.separator", "match": "[.,;:]" }
+  ]
+}

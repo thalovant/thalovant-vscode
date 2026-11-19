@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thalovant-skill-plant-care"
+version = "0.1.0"
+description = "Plant Care: the extension's fixture skill"
+requires-python = ">=3.11"
+dependencies = ["thalovant-skillkit>=0.30.0"]
+
+[project.entry-points."opm.skill"]
+"thalovant-skill-plant-care.thalovant" = "thalovant_skill_plant_care:PlantCareSkill"
+
+[tool.setuptools]
+packages = ["thalovant_skill_plant_care"]
+
+[tool.setuptools.package-data]
+thalovant_skill_plant_care = ["locale/*.json", "locale/*/*", "locale/*/*/*", "gui/*/*"]

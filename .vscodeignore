@@ -1,0 +1,12 @@
+**
+!dist/extension.js
+!python/thalovant_dev_runner.py
+!media/**
+!syntaxes/**
+!snippets/**
+!schemas/**
+!images/simulator.png
+!package.json
+!README.md
+!CHANGELOG.md
+!LICENSE

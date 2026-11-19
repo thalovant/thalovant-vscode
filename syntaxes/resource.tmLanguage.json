@@ -1,0 +1,13 @@
+{
+  "scopeName": "source.thalovant.resource",
+  "name": "Thalovant locale resource",
+  "patterns": [
+    { "name": "comment.line.number-sign", "match": "^\\s*#.*$" },
+    { "name": "variable.parameter.slot", "match": "\\{\\s*[^{}\\s]+\\s*\\}" },
+    { "name": "keyword.operator.alternative", "match": "\\|" },
+    { "name": "punctuation.definition.group", "match": "[()]" },
+    { "name": "storage.modifier.optional", "match": "[\\[\\]]" },
+    { "name": "string.regexp", "match": "\\(\\?P<[^>]+>" },
+    { "include": "source.thalovant.ssml#tags" }
+  ]
+}
