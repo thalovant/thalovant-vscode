@@ -21,9 +21,11 @@ on:
         description: Release tag whose .vsix to publish, such as v0.1.0
         required: true
 
+# One publish at a time, and every release waits its turn: with the default
+# queue a third release would cancel the one still pending.
 concurrency:
   group: open-vsx
-  cancel-in-progress: false
+  queue: max
 
 jobs:
   publish:
@@ -33,8 +35,6 @@ jobs:
       id-token: write
     env:
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
-      OVSX_PAT: ${{ secrets.OVSX_PAT }}
-      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -42,8 +42,11 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
-      - run: npm ci
+      # No install scripts: this job can mint an OIDC token, and ovsx needs none.
+      - run: npm ci --ignore-scripts
       - name: Download the release's .vsix
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p release
           gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.vsix' --dir release
@@ -52,18 +55,47 @@ jobs:
           version=$(unzip -p "$1" extension/package.json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).version))')
           [ "v$version" = "$TAG" ] || { echo "::error::$TAG carries version $version"; exit 1; }
           echo "VSIX=$1" >> "$GITHUB_ENV"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+      # A version Open VSX already has must be this very file: a release
+      # whose .vsix was replaced afterwards fails here instead of passing.
+      - name: Compare with the version on Open VSX
+        id: existing
+        run: |
+          status=$(curl -s -o existing.json -w '%{http_code}' "https://open-vsx.org/api/thalovant/thalovant-skills/$VERSION")
+          case "$status" in
+            404) echo "published=false" >> "$GITHUB_OUTPUT"; exit 0 ;;
+            200) ;;
+            *) echo "::error::Open VSX answered $status"; exit 1 ;;
+          esac
+          url=$(node -p 'require("./existing.json").files.sha256')
+          theirs=$(curl -sfL "$url" | tr -d '[:space:]')
+          ours=$(sha256sum "$VSIX" | cut -c1-64)
+          if [ "$theirs" != "$ours" ]; then
+            echo "::error::Open VSX has $VERSION with sha256 $theirs; the release's .vsix is $ours"
+            exit 1
+          fi
+          echo "Open VSX already has this exact $VERSION."
+          echo "published=true" >> "$GITHUB_OUTPUT"
       - name: Create the namespace (first publish only)
-        if: env.OVSX_PAT != ''
+        if: steps.existing.outputs.published == 'false'
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
         run: |
           if curl -sf https://open-vsx.org/api/thalovant > /dev/null; then
             echo "The thalovant namespace exists."
-          else
+          elif [ -n "$OVSX_PAT" ]; then
             npx ovsx create-namespace thalovant -p "$OVSX_PAT"
+          else
+            echo "::error::The thalovant namespace does not exist yet; the first publish needs the OVSX_PAT secret"
+            exit 1
           fi
       - name: Publish
+        if: steps.existing.outputs.published == 'false'
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
         run: |
           if [ -n "$OVSX_PAT" ]; then
-            npx ovsx publish "$VSIX" -p "$OVSX_PAT" --skip-duplicate
+            npx ovsx publish "$VSIX" -p "$OVSX_PAT"
           else
-            npx ovsx publish "$VSIX" --trusted-publishing --skip-duplicate
+            npx ovsx publish "$VSIX" --trusted-publishing
           fi
