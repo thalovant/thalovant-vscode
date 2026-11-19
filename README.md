@@ -18,6 +18,20 @@ on screen.
 
 ![The simulator: a card on the Mark II screen, a follow-up question and its answer](images/simulator.png)
 
+## Install
+
+- **VSCodium, Cursor, Windsurf** and other editors that install from
+  [Open VSX](https://open-vsx.org/extension/thalovant/thalovant-skills):
+  search for **Thalovant Skills** in the Extensions view, or run
+  `codium --install-extension thalovant.thalovant-skills`.
+- **VS Code**: download `thalovant-skills-<version>.vsix` from the
+  [releases](https://github.com/thalovant/thalovant-vscode/releases), then
+  **Extensions → … → Install from VSIX…**, or run
+  `code --install-extension thalovant-skills-<version>.vsix`.
+
+The guide is at
+[docs.thalovant.com/developers/vscode-extension](https://docs.thalovant.com/developers/vscode-extension/).
+
 ## Getting started
 
 Open a folder that holds a skill (a `thalovant_skill_*` package, as
