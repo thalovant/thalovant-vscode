@@ -1,0 +1,69 @@
+permissions:
+  contents: read
+
+name: Publish to Open VSX
+
+# Publishes the .vsix attached to a GitHub release, the same file people
+# download from the release page, so both places carry one build per version.
+#
+# The first version goes out with the OVSX_PAT secret: Open VSX needs an
+# access token to create the namespace and the extension. Once the extension
+# exists, a trusted publisher (open-vsx.org > Settings > Trusted Publishers:
+# thalovant / thalovant-vscode / publish.yml) lets this workflow publish with
+# GitHub's OIDC token instead, and the secret can be deleted.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag whose .vsix to publish, such as v0.1.0
+        required: true
+
+concurrency:
+  group: open-vsx
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      OVSX_PAT: ${{ secrets.OVSX_PAT }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+      - run: npm ci
+      - name: Download the release's .vsix
+        run: |
+          mkdir -p release
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.vsix' --dir release
+          set -- release/*.vsix
+          [ "$#" -eq 1 ] && [ -f "$1" ] || { echo "::error::$TAG must carry exactly one .vsix"; exit 1; }
+          version=$(unzip -p "$1" extension/package.json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).version))')
+          [ "v$version" = "$TAG" ] || { echo "::error::$TAG carries version $version"; exit 1; }
+          echo "VSIX=$1" >> "$GITHUB_ENV"
+      - name: Create the namespace (first publish only)
+        if: env.OVSX_PAT != ''
+        run: |
+          if curl -sf https://open-vsx.org/api/thalovant > /dev/null; then
+            echo "The thalovant namespace exists."
+          else
+            npx ovsx create-namespace thalovant -p "$OVSX_PAT"
+          fi
+      - name: Publish
+        run: |
+          if [ -n "$OVSX_PAT" ]; then
+            npx ovsx publish "$VSIX" -p "$OVSX_PAT" --skip-duplicate
+          else
+            npx ovsx publish "$VSIX" --trusted-publishing --skip-duplicate
+          fi
