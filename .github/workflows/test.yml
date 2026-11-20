@@ -21,7 +21,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install --pre "thalovant-skillkit[testing]" pytest ruff
-      - run: ruff check --line-length 110 python test/python
+      - run: ruff check --line-length 110 python test/python tools/publish_release.py
       - run: python -m pytest -q test/python
       - run: npm ci
       - run: npm run typecheck
