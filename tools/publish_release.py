@@ -1,7 +1,7 @@
 """Validate and compare the existing release package; never rebuild or publish it."""
 import argparse
-import hashlib
 import gzip
+import hashlib
 import json
 import os
 import re

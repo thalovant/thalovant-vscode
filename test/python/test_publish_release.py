@@ -1,6 +1,6 @@
 """Release publishing must refuse mismatched or ambiguous artifacts."""
-import hashlib
 import gzip
+import hashlib
 import importlib.util
 import io
 import json
@@ -98,17 +98,21 @@ def test_existing_marketplace_version_must_match_bytes():
     digest = hashlib.sha256(content).hexdigest()
     with patch.object(publish.urllib.request, "urlopen", return_value=download_response(content)):
         assert publish.marketplace_matches("0.1.0", digest)
-    with patch.object(publish.urllib.request, "urlopen", return_value=download_response(b"different release")):
-        with pytest.raises(ValueError, match="different bytes"):
-            publish.marketplace_matches("0.1.0", digest)
+    with (
+        patch.object(publish.urllib.request, "urlopen", return_value=download_response(b"different release")),
+        pytest.raises(ValueError, match="different bytes"),
+    ):
+        publish.marketplace_matches("0.1.0", digest)
 
 
 @pytest.mark.parametrize("status", [401, 403, 429, 500, 503])
 def test_service_failure_is_not_a_missing_version(status):
     error = urllib.error.HTTPError("https://example.test", status, "failed", {}, None)
-    with patch.object(publish.urllib.request, "urlopen", side_effect=error):
-        with pytest.raises(urllib.error.HTTPError):
-            publish.marketplace_matches("0.1.0", "unused")
+    with (
+        patch.object(publish.urllib.request, "urlopen", side_effect=error),
+        pytest.raises(urllib.error.HTTPError),
+    ):
+        publish.marketplace_matches("0.1.0", "unused")
 
 
 def test_only_not_found_permits_initial_publish():
@@ -146,6 +150,8 @@ def test_marketplace_http_compression_is_not_part_of_the_vsix_hash():
 
 
 def test_unknown_http_encoding_fails_closed():
-    with patch.object(publish.urllib.request, "urlopen", return_value=download_response(b"bytes", "unknown")):
-        with pytest.raises(ValueError, match="Unsupported"):
-            publish.marketplace_matches("0.1.0", "unused")
+    with (
+        patch.object(publish.urllib.request, "urlopen", return_value=download_response(b"bytes", "unknown")),
+        pytest.raises(ValueError, match="Unsupported"),
+    ):
+        publish.marketplace_matches("0.1.0", "unused")
