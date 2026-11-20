@@ -106,7 +106,7 @@
       ),
     );
     if (s.state === "ready" && (info.adapt_intents || []).length && !info.adapt_runs) {
-      add(header, h("div", { class: "notice" },
+      add(header, h("div", { class: "adapt-warning" },
         h("strong", { text: "Paired hubs don't run Adapt. " }),
         h("span", { text: `These intents never answer there: ${info.adapt_intents.join(", ")}. Rewrite them as .intent files, or set thalovant.simulator.pipeline to “unpaired” if the skill is only for unpaired runtimes.` })));
     }
