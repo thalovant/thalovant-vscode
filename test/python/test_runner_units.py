@@ -1,6 +1,5 @@
 """The runner's pure parts, without starting OVOS."""
 import importlib.util
-import json
 import sys
 from pathlib import Path
 
@@ -59,14 +58,12 @@ def test_unpaired_runtimes_keep_adapt():
     assert "ovos-adapt-pipeline-plugin-high" in runner.pipeline("unpaired")
 
 
-def test_hub_config_is_written_only_for_m2v(tmp_path, monkeypatch):
-    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
-    runner._write_hub_config(runner.pipeline("hub"))
-    assert not (tmp_path / "mycroft" / "mycroft.conf").exists()
-    runner._write_hub_config(runner.pipeline("hub-m2v"))
-    conf = json.loads((tmp_path / "mycroft" / "mycroft.conf").read_text())
-    assert conf["intents"]["ovos-m2v-prototype-pipeline"]["subfolder"] == "encoder"
-    assert conf["intents"]["ovos-m2v-prototype-pipeline"]["conf_medium"] == 0.80
+def test_the_hub_m2v_settings_go_through_pipeline_config():
+    assert runner.pipeline_config(runner.pipeline("hub")) is None
+    config = runner.pipeline_config(runner.pipeline("hub-m2v"))["ovos-m2v-prototype-pipeline"]
+    assert config["model"] == "thalovant/thalovant-m2v-intents"
+    assert config["subfolder"] == "encoder"
+    assert config["conf_medium"] == 0.80
 
 
 def test_intent_labels_and_matching():

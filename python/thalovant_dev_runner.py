@@ -195,18 +195,15 @@ def pipeline(name: str | list[str]) -> list[str]:
     return stages
 
 
-def _write_hub_config(stages: list[str]) -> None:
-    """Give the m2v prototype stage the hub's settings, in the isolated config the runner boots with."""
+def pipeline_config(stages: list[str]) -> dict[str, dict] | None:
+    """The hub's settings for the m2v prototype stage, for MiniCroft's ``pipeline_config``.
+
+    MiniCroft isolates the user configuration, so the settings go in through
+    the argument it reads them from, never through a mycroft.conf file.
+    """
     if not any("m2v-prototype" in stage for stage in stages):
-        return
-    home = os.environ.get("XDG_CONFIG_HOME")
-    if not home:
-        return
-    path = Path(home) / "mycroft" / "mycroft.conf"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    current = json.loads(path.read_text()) if path.is_file() else {}
-    current.setdefault("intents", {})["ovos-m2v-prototype-pipeline"] = dict(M2V_PROTOTYPE)
-    path.write_text(json.dumps(current, indent=2))
+        return None
+    return {"ovos-m2v-prototype-pipeline": dict(M2V_PROTOTYPE)}
 
 
 def _adapt_intents(skill: Any) -> list[str]:
@@ -332,9 +329,7 @@ class Runner:
         from thalovant_skillkit.testing_ovos import isolated_xdg
 
         self.stack.enter_context(isolated_xdg())
-        # Before OVOS is imported: it may read its configuration on import.
         stages = pipeline(request.get("pipeline") or "hub")
-        _write_hub_config(stages)
         sys.path.insert(0, str(root))
         started = time.monotonic()
         module = importlib.import_module(found["module"])
@@ -374,6 +369,7 @@ class Runner:
         try:
             self.croft = ovoscope.get_minicroft(
                 [skill_id], extra_skills={skill_id: skill_class}, default_pipeline=stages,
+                pipeline_config=pipeline_config(stages),
                 lang=lang, secondary_langs=list(secondary))  # get_minicroft appends to it
         finally:
             self.turn = None
