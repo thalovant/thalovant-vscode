@@ -1,5 +1,9 @@
 # Maintainer questions
 
+**How do I install in VS Code?** Search for **Thalovant Skills**, published by
+**Thalovant**, or run `code --install-extension thalovant.thalovant-skills`.
+Open VSX and release VSIX installation remain available; see the [README](README.md).
+
 **Does a publishing run rebuild the VSIX?** No. Both registries receive the existing
 GitHub release package. `npm run package` in CI tests packaging but is not uploaded.
 

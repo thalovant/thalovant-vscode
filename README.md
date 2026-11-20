@@ -20,11 +20,15 @@ on screen.
 
 ## Install
 
+- **VS Code**: search for **Thalovant Skills**, published by **Thalovant**,
+  in the Extensions view, open its
+  [Microsoft Marketplace listing](https://marketplace.visualstudio.com/items?itemName=thalovant.thalovant-skills),
+  or run `code --install-extension thalovant.thalovant-skills`.
 - **VSCodium, Cursor, Windsurf** and other editors that install from
   [Open VSX](https://open-vsx.org/extension/thalovant/thalovant-skills):
   search for **Thalovant Skills** in the Extensions view, or run
   `codium --install-extension thalovant.thalovant-skills`.
-- **VS Code**: download `thalovant-skills-<version>.vsix` from the
+- **Install from a file**: download `thalovant-skills-<version>.vsix` from the
   [releases](https://github.com/thalovant/thalovant-vscode/releases), then
   **Extensions → … → Install from VSIX…**, or run
   `code --install-extension thalovant-skills-<version>.vsix`.
