@@ -90,12 +90,15 @@ with what each lacks, its intents, dialogs, vocabulary and layouts.
 
 ## Good to know
 
-- The simulator walks a sentence through stop, converse, Adapt, Padatious and
-  every fallback tier (`thalovant.simulator.pipeline: "local"`). The hub also
-  routes with the fleet's model2vec classifier: set `"m2v"` to route that way,
-  which downloads the model on first use. A sentence that another skill
-  already claims is caught by the fleet check, not by the simulator, because
-  the simulator loads only your skill.
+- The simulator routes a sentence the way a paired Thalovant hub does: stop,
+  converse, Padatious, common query, and the low fallback tier
+  (`thalovant.simulator.pipeline: "hub"`). Paired hubs don't run Adapt, so
+  the simulator warns when the skill registers Adapt intents: they would answer
+  nowhere. `"hub-m2v"` adds the hub's model2vec prototype stages on
+  Thalovant's own encoder (downloaded on first use); `"unpaired"` adds Adapt,
+  as unpaired runtimes keep it. A sentence that another skill already claims is
+  caught by the fleet check, not by the simulator, because the simulator loads
+  only your skill.
 - A layout card (`.rfwtxt`) is drawn by the satellite's own widget library.
   The simulator shows what a screen that cannot draw it shows: the card's
   `body`, and the data bound to it.
@@ -113,7 +116,7 @@ with what each lacks, its intents, dialogs, vocabulary and layouts.
 | Setting | Default | |
 |---|---|---|
 | `thalovant.python` | | The Python that runs the skill. `${skillFolder}` and `${workspaceFolder}` are expanded. |
-| `thalovant.simulator.pipeline` | `local` | `local` or `m2v` (the hub's classifier). |
+| `thalovant.simulator.pipeline` | `hub` | `hub` (a paired hub), `hub-m2v` (plus its model2vec stages) or `unpaired` (plus Adapt). |
 | `thalovant.simulator.reloadOnSave` | `true` | Restart the skill when one of its files is saved. |
 | `thalovant.simulator.languages` | `[]` | Languages the hub loads; empty means `locale/supported.json`. |
 | `thalovant.simulator.location` | `null` | The location in each sentence's context. |

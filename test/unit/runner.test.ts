@@ -16,7 +16,7 @@ before(async () => {
   if (!python) return;
   runner = new RunnerProcess(python, path.join(ROOT, "python/thalovant_dev_runner.py"), FIXTURE, () => undefined);
   await runner.whenReady();
-  info = await runner.request<SkillInfo>("start", { root: FIXTURE, langs: ["en-US", "fr-FR"], pipeline: "local" });
+  info = await runner.request<SkillInfo>("start", { root: FIXTURE, langs: ["en-US", "fr-FR"], pipeline: "hub" });
 });
 
 after(async () => {
@@ -111,5 +111,23 @@ test("a skill OVOS refuses to load is reported as not started, with OVOS's reaso
   } finally {
     await broken.stop();
     fs.rmSync(copy, { recursive: true, force: true });
+  }
+});
+
+test("an Adapt intent: named as never running on a paired hub, answered on an unpaired runtime", { skip: !python }, async () => {
+  const probe = path.join(ROOT, "test/fixtures/thalovant-skill-adapt-probe");
+  for (const [pipeline, answers] of [["hub", false], ["unpaired", true]] as const) {
+    const run = new RunnerProcess(python!, path.join(ROOT, "python/thalovant_dev_runner.py"), probe, () => undefined);
+    try {
+      await run.whenReady();
+      const started = await run.request<SkillInfo>("start", { root: probe, langs: ["en-US"], pipeline });
+      assert.deepEqual(started.adapt_intents, ["PingIntent"]);
+      assert.equal(started.adapt_runs, answers);
+      const turn = await run.request<{ route: { matched: boolean }; replies: { utterance: string }[] }>("utter", { text: "ping" });
+      assert.equal(turn.route.matched, answers);
+      if (answers) assert.equal(turn.replies[0]?.utterance, "pong");
+    } finally {
+      await run.stop();
+    }
   }
 });

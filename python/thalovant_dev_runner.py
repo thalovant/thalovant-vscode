@@ -141,36 +141,79 @@ def _base_kind(skill_type: type) -> str:
 
 # -- pipelines ------------------------------------------------------------------------------
 
-def pipeline(name: str | list[str]) -> list[str]:
-    """The intent stages a turn walks through.
+#: The prototype stage's settings on a hub (thalovant-api intent_pipelines.M2V_PROTOTYPE_CONFIG) and
+#: the encoder the runtime image bakes for it (ovos-runtime-image bake_m2v_model.py).
+M2V_PROTOTYPE = {
+    "model": "thalovant/thalovant-m2v-intents",
+    "revision": "b556241a0f5bc574bbe852c6140d9dda1b0a4482",
+    "subfolder": "encoder",
+    "conf_medium": 0.80,
+    "preload_model": True,
+    "prototype_strategy": "farthest_point",
+    "prototype_k": 128,
+}
+#: Older setting values, kept working.
+PIPELINE_ALIASES = {"local": "hub", "m2v": "hub-m2v"}
 
-    "local" is every stage a skill can register with that runs without a
-    model download: stop, converse, adapt, padatious (padacioso where the
-    compiled engine is missing), and the fallback ladder in all three tiers,
-    so a fallback skill at 91-100 is asked. OVOScope's lean default leaves
-    the low tier out, and a broad fallback skill is then never heard.
-    "m2v" adds the fleet's model2vec classifier, as the hub routes.
+
+def _installed_pipeline(plugin: str) -> bool:
+    from importlib.metadata import entry_points
+    return any(ep.name == plugin for ep in entry_points(group="opm.pipeline"))
+
+
+def pipeline(name: str | list[str]) -> list[str]:
+    """The intent stages a turn walks through: what a Thalovant hub runs.
+
+    "hub" is a paired hub (thalovant-api gitops._PAIRED_SKILL_PIPELINE) without
+    its model download: stop, converse, Padatious, common query, and only the
+    low fallback tier. Paired hubs blacklist Adapt and Padacioso, so an Adapt
+    intent that answers here would never answer there. "hub-m2v" adds the
+    hub's model2vec prototype stages (Thalovant's encoder, downloaded on first
+    use). "unpaired" adds Adapt, as unpaired runtimes keep it. Padacioso stands
+    in for Padatious only where the compiled engine is missing.
     """
     if isinstance(name, list):
         return name
+    name = PIPELINE_ALIASES.get(name, name)
     try:
         import padatious  # noqa: F401
-        exact = ["ovos-padatious-pipeline-plugin-high", "ovos-padatious-pipeline-plugin-medium"]
-        loose = ["ovos-padatious-pipeline-plugin-low"]
+        exact = "ovos-padatious-pipeline-plugin-high"
     except Exception:  # noqa: BLE001 - no compiled engine: the pure-Python twin
-        exact = ["ovos-padacioso-pipeline-plugin-high", "ovos-padacioso-pipeline-plugin-medium"]
-        loose = ["ovos-padacioso-pipeline-plugin-low"]
-    stages = (["ovos-stop-pipeline-plugin-high", "ovos-stop-pipeline-plugin-medium",
-               "ovos-converse-pipeline-plugin",
-               "ovos-adapt-pipeline-plugin-high"] + exact[:1]
-              + (["ovos-m2v-pipeline-high"] if name == "m2v" else [])
-              + ["ovos-fallback-pipeline-plugin-high",
-                 "ovos-adapt-pipeline-plugin-medium"] + exact[1:]
-              + (["ovos-m2v-pipeline-medium"] if name == "m2v" else [])
-              + ["ovos-fallback-pipeline-plugin-medium",
-                 "ovos-adapt-pipeline-plugin-low"] + loose
-              + ["ovos-fallback-pipeline-plugin-low"])
+        exact = "ovos-padacioso-pipeline-plugin-high"
+    m2v = name == "hub-m2v"
+    common = _installed_pipeline("ovos-common-query-pipeline-plugin")
+    stages = ["ovos-stop-pipeline-plugin-high", "ovos-converse-pipeline-plugin", exact]
+    if name == "unpaired":
+        stages.append("ovos-adapt-pipeline-plugin-high")
+    if m2v:
+        stages.append("ovos-m2v-prototype-pipeline-high")
+    if common:
+        stages.append("ovos-common-query-pipeline-plugin")
+    if m2v:
+        stages.append("ovos-m2v-prototype-pipeline-medium")
+    stages.append("ovos-fallback-pipeline-plugin-low")
     return stages
+
+
+def _write_hub_config(stages: list[str]) -> None:
+    """Give the m2v prototype stage the hub's settings, in the isolated config the runner boots with."""
+    if not any("m2v-prototype" in stage for stage in stages):
+        return
+    home = os.environ.get("XDG_CONFIG_HOME")
+    if not home:
+        return
+    path = Path(home) / "mycroft" / "mycroft.conf"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    current = json.loads(path.read_text()) if path.is_file() else {}
+    current.setdefault("intents", {})["ovos-m2v-prototype-pipeline"] = dict(M2V_PROTOTYPE)
+    path.write_text(json.dumps(current, indent=2))
+
+
+def _adapt_intents(skill: Any) -> list[str]:
+    """The skill's intents registered with Adapt (an intent object, not a Padatious file)."""
+    service = getattr(skill, "intent_service", None)
+    registered = getattr(service, "registered_intents", None) or []
+    return sorted({str(name).split(":")[-1] for name, data in registered if not isinstance(data, dict)})
 
 
 # -- watching a turn --------------------------------------------------------------------------
@@ -289,6 +332,9 @@ class Runner:
         from thalovant_skillkit.testing_ovos import isolated_xdg
 
         self.stack.enter_context(isolated_xdg())
+        # Before OVOS is imported: it may read its configuration on import.
+        stages = pipeline(request.get("pipeline") or "hub")
+        _write_hub_config(stages)
         sys.path.insert(0, str(root))
         started = time.monotonic()
         module = importlib.import_module(found["module"])
@@ -306,7 +352,6 @@ class Runner:
         secondary = [code for code in langs if code != lang]
         self.default_lang = lang
         settings = request.get("settings") or None
-        stages = pipeline(request.get("pipeline") or "local")
 
         skill_class = skill_type
         if settings:
@@ -357,6 +402,9 @@ class Runner:
             "file": inspect.getsourcefile(skill_type), "line": inspect.getsourcelines(skill_type)[1],
             "lang": lang, "langs": [lang, *secondary], "pipeline": stages,
             "boot_seconds": round(loaded, 3),
+            # Adapt intents answer only where Adapt runs: never on a paired hub.
+            "adapt_intents": _adapt_intents(skill) if skill is not None else [],
+            "adapt_runs": any("adapt" in stage for stage in stages),
         }
         return self.info
 
