@@ -125,12 +125,15 @@ export class SkillSession implements vscode.Disposable {
     this.info = await runner.request<SkillInfo>("start", {
       root: model.root,
       langs: this.languages,
-      pipeline: config.get<string>("pipeline") ?? "local",
+      pipeline: config.get<string>("pipeline") ?? "hub",
       settings: config.get<Record<string, unknown>>("skillSettings") ?? {},
     }, 300_000);
     if (generation !== this.generation) return;
     this.failure = undefined;
     this.log.info(`${this.info.skill_id} is running (${this.info.base}, booted in ${this.info.boot_seconds} s)`);
+    if (this.info.adapt_intents?.length && !this.info.adapt_runs) {
+      this.log.warn(`Adapt intents a paired hub never runs: ${this.info.adapt_intents.join(", ")}`);
+    }
     this.setState("ready");
   }
 

@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.1
+
+- **The simulator routes like a paired hub.** The default pipeline is now
+  `hub`: stop, converse, Padatious, common query and the low fallback tier,
+  as paired hubs run. The old default also ran Adapt and the high and medium
+  fallback tiers, which paired hubs never run, so a skill could answer in the
+  simulator and stay silent on a hub.
+- When a skill registers Adapt intents and the pipeline does not run Adapt,
+  the simulator says which intents a paired hub will never answer.
+- `hub-m2v` uses the hub's model2vec **prototype** stages on Thalovant's own
+  encoder, with the hub's settings. The old `m2v` used the frozen classifier,
+  which cannot match a skill's registered intents.
+- `unpaired` keeps Adapt, for skills meant for unpaired runtimes. The old
+  values `local` and `m2v` still work, as `hub` and `hub-m2v`.
+
 ## 0.1.0
 
 First version.

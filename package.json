@@ -2,7 +2,7 @@
   "name": "thalovant-skills",
   "displayName": "Thalovant Skills",
   "description": "Write a Thalovant skill and try it at once: a device simulator next to your code that runs the skill in a real OVOS core, shows what it says, writes and puts on a screen, plus SkillKit checks, golden utterances and locale intelligence.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "thalovant",
   "license": "Apache-2.0",
   "icon": "media/icon.png",
@@ -93,13 +93,16 @@
         },
         "thalovant.simulator.pipeline": {
           "type": "string",
-          "enum": ["local", "m2v"],
+          "enum": ["hub", "hub-m2v", "unpaired", "local", "m2v"],
           "enumDescriptions": [
-            "Stop, converse, Adapt, Padatious and every fallback tier. Fast, no download.",
-            "Adds the fleet's model2vec classifier, the way the hub routes. Downloads the model on first use."
+            "What a paired Thalovant hub runs: stop, converse, Padatious, common query and the low fallback tier. No Adapt. No download.",
+            "A paired hub with its model2vec prototype stages, on Thalovant's own encoder. Downloads the encoder on first use.",
+            "An unpaired runtime: the hub stages plus Adapt.",
+            "Older name for hub.",
+            "Older name for hub-m2v."
           ],
-          "default": "local",
-          "description": "The intent stages a sentence walks through in the simulator."
+          "default": "hub",
+          "description": "The intent stages a sentence walks through in the simulator. Paired hubs do not run Adapt: an Adapt intent that answers in the simulator under unpaired never answers on them."
         },
         "thalovant.simulator.reloadOnSave": {
           "type": "boolean",

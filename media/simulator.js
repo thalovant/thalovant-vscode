@@ -105,6 +105,11 @@
         h("button", { class: "icon", title: "Simulator settings", onclick: () => vscode.postMessage({ type: "settings" }), text: "⚙" }),
       ),
     );
+    if (s.state === "ready" && (info.adapt_intents || []).length && !info.adapt_runs) {
+      add(header, h("div", { class: "adapt-warning" },
+        h("strong", { text: "Paired hubs don't run Adapt. " }),
+        h("span", { text: `These intents never answer there: ${info.adapt_intents.join(", ")}. Rewrite them as .intent files, or set thalovant.simulator.pipeline to “unpaired” if the skill is only for unpaired runtimes.` })));
+    }
     if (s.state === "failed" && s.failure) {
       const fixLabel = { setup: "Set up the environment", python: "Choose a Python", trust: "Trust the workspace", check: "Check the skill" }[s.failure.fix];
       add(header, h("div", { class: "failure" },

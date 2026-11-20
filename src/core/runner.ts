@@ -91,6 +91,10 @@ export interface SkillInfo {
   langs: string[];
   pipeline: string[];
   boot_seconds: number;
+  /** The skill's intents registered with Adapt. */
+  adapt_intents?: string[];
+  /** Whether the chosen pipeline runs Adapt (only "unpaired" does). */
+  adapt_runs?: boolean;
 }
 
 export interface Hello {

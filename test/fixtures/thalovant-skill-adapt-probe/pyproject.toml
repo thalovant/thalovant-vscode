@@ -1,0 +1,5 @@
+[project]
+name = "thalovant-skill-adapt-probe"
+version = "0.0.1"
+[project.entry-points."opm.skill"]
+"thalovant-skill-adapt-probe.thalovant" = "thalovant_skill_adapt_probe:ProbeSkill"
