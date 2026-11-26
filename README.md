@@ -98,7 +98,8 @@ with what each lacks, its intents, dialogs, vocabulary and layouts.
   Thalovant's own encoder (downloaded on first use); `"unpaired"` adds Adapt,
   as unpaired runtimes keep it. A sentence that another skill already claims is
   caught by the fleet check, not by the simulator, because the simulator loads
-  only your skill.
+  only your skill. The simulator also leaves out the crisis referral that a
+  hub runs ahead of every other stage.
 - A layout card (`.rfwtxt`) is drawn by the satellite's own widget library.
   The simulator shows what a screen that cannot draw it shows: the card's
   `body`, and the data bound to it.
@@ -138,7 +139,8 @@ The runner and the extension exchange one JSON object per line over stdio.
 Each turn is collected from the bus firehose. A turn ends at
 `ovos.utterance.handled`, or as soon as the skill asks a question, because a
 `get_response` handler waits for the next utterance. A save restarts the
-process; a MiniCroft boots in under a second.
+process, which boots a new MiniCroft and trains the skill's intents in a few
+seconds.
 
 ```
 npm install

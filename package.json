@@ -2,7 +2,7 @@
   "name": "thalovant-skills",
   "displayName": "Thalovant Skills",
   "description": "Write a Thalovant skill and try it at once: a device simulator next to your code that runs the skill in a real OVOS core, shows what it says, writes and puts on a screen, plus SkillKit checks, golden utterances and locale intelligence.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "thalovant",
   "license": "Apache-2.0",
   "icon": "media/icon.png",
