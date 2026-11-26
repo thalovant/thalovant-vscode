@@ -1,31 +1,16 @@
+# Temporary, on this branch only: asks Open VSX for a trusted publishing token to prove the
+# registration. It publishes nothing and never prints the token.
 permissions:
   contents: read
 
 name: Publish extension registries
 
-# Publishes the .vsix attached to a GitHub release, the same file people
-# download from the release page, so both places carry one build per version.
-#
-# The first version goes out with the OVSX_PAT secret: Open VSX needs an
-# access token to create the namespace and the extension. Once the extension
-# exists, a trusted publisher (open-vsx.org > Settings > Trusted Publishers:
-# thalovant / thalovant-vscode / publish.yml) lets this workflow publish with
-# GitHub's OIDC token instead, and the secret can be deleted.
-
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       tag:
-        description: Release tag whose .vsix to publish, such as v0.1.0
+        description: Unused by this check
         required: true
-
-# One publish at a time, and every release waits its turn: with the default
-# queue a third release would cancel the one still pending.
-concurrency:
-  group: extension-registries
-  queue: max
 
 jobs:
   publish:
@@ -33,8 +18,6 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    env:
-      TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -42,101 +25,13 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
-      # No install scripts: this job can mint an OIDC token, and ovsx needs none.
       - run: npm ci --ignore-scripts
-      - name: Download the release's .vsix
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Request a trusted publishing token (nothing is published)
         run: |
-          mkdir -p release
-          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.vsix' --dir release
-          set -- release/*.vsix
-          [ "$#" -eq 1 ] && [ -f "$1" ] || { echo "::error::$TAG must carry exactly one .vsix"; exit 1; }
-          version=$(unzip -p "$1" extension/package.json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).version))')
-          [ "v$version" = "$TAG" ] || { echo "::error::$TAG carries version $version"; exit 1; }
-          echo "VSIX=$1" >> "$GITHUB_ENV"
-          echo "VERSION=$version" >> "$GITHUB_ENV"
-      # A version Open VSX already has must be this very file: a release
-      # whose .vsix was replaced afterwards fails here instead of passing.
-      - name: Compare with the version on Open VSX
-        id: existing
-        run: |
-          status=$(curl -s -o existing.json -w '%{http_code}' "https://open-vsx.org/api/thalovant/thalovant-skills/$VERSION")
-          case "$status" in
-            404) echo "published=false" >> "$GITHUB_OUTPUT"; exit 0 ;;
-            200) ;;
-            *) echo "::error::Open VSX answered $status"; exit 1 ;;
-          esac
-          url=$(node -p 'require("./existing.json").files.sha256')
-          theirs=$(curl -sfL "$url" | tr -d '[:space:]')
-          ours=$(sha256sum "$VSIX" | cut -c1-64)
-          if [ "$theirs" != "$ours" ]; then
-            echo "::error::Open VSX has $VERSION with sha256 $theirs; the release's .vsix is $ours"
-            exit 1
-          fi
-          echo "Open VSX already has this exact $VERSION."
-          echo "published=true" >> "$GITHUB_OUTPUT"
-      - name: Create the namespace (first publish only)
-        if: steps.existing.outputs.published == 'false'
-        env:
-          OVSX_PAT: ${{ secrets.OVSX_PAT }}
-        run: |
-          if curl -sf https://open-vsx.org/api/thalovant > /dev/null; then
-            echo "The thalovant namespace exists."
-          elif [ -n "$OVSX_PAT" ]; then
-            npx ovsx create-namespace thalovant -p "$OVSX_PAT"
-          else
-            echo "::error::The thalovant namespace does not exist yet; the first publish needs the OVSX_PAT secret"
-            exit 1
-          fi
-      - name: Publish
-        if: steps.existing.outputs.published == 'false'
-        env:
-          OVSX_PAT: ${{ secrets.OVSX_PAT }}
-        run: |
-          if [ -n "$OVSX_PAT" ]; then
-            npx ovsx publish "$VSIX" -p "$OVSX_PAT"
-          else
-            npx ovsx publish "$VSIX" --trusted-publishing
-          fi
-
-  marketplace:
-    needs: publish
-    # The publishing policy is bound to this repository and publish.yml.
-    # Only main can dispatch it; a published release supplies its existing VSIX.
-    if: github.repository == 'thalovant/thalovant-vscode' && (github.event_name == 'release' || github.ref == 'refs/heads/main')
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      id-token: write
-    env:
-      TAG: ${{ github.event.release.tag_name || inputs.tag }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          # Publishing tools come from trusted main, not a user-supplied tag.
-          ref: main
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: "22"
-      - run: npm ci --ignore-scripts
-      - name: Download and verify the existing release package
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          mkdir -p release
-          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json tagName,isDraft,isPrerelease,assets > release/release.json
-          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.vsix' --dir release
-          python3 tools/publish_release.py prepare
-      - name: Compare with the version on Microsoft Marketplace
-        id: existing
-        run: python3 tools/publish_release.py compare
-      - name: Publish the same VSIX with trusted publishing
-        if: steps.existing.outputs.published == 'false'
-        # The locked local CLI uses a short-lived OIDC credential. No PAT is stored.
-        # Do not use --skip-duplicate: a duplicate must pass the byte comparison.
-        run: ./node_modules/.bin/vsce publish --oidc --packagePath "$VSIX"
-      - name: Verify the public Marketplace package
-        run: python3 tools/publish_release.py verify
+          node -e '
+            const { Registry } = require("./node_modules/ovsx/lib/registry");
+            const { getTrustedPublishingToken } = require("./node_modules/ovsx/lib/trusted-publishing");
+            getTrustedPublishingToken(new Registry({}), "thalovant", "thalovant-skills", {})
+              .then((token) => { if (!token) throw new Error("empty token"); console.log("Trusted publisher registration works."); })
+              .catch((error) => { console.error(error.message); process.exit(1); });
+          '
