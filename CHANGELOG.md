@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.2
+
+- **The simulator uses Padatious, as a hub does.** It looked for the engine
+  under an old name, never found it, and used Padacioso in its place. A
+  sentence could match an intent in the simulator and not on a hub, or the
+  other way round. Padatious trains the skill's intents at each start, so a
+  restart now takes a few seconds.
+
 ## 0.1.1
 
 - **The simulator routes like a paired hub.** The default pipeline is now

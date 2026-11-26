@@ -1,7 +1,10 @@
 """The runner's pure parts, without starting OVOS."""
 import importlib.util
 import sys
+import types
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -43,6 +46,14 @@ def test_the_default_pipeline_is_a_paired_hubs():
     assert not any("m2v" in s for s in stages)
     # The old setting values still work.
     assert runner.pipeline("local") == stages
+
+
+@pytest.mark.parametrize("installed, engine", [(True, "padatious"), (False, "padacioso")])
+def test_padatious_whenever_it_is_installed_as_on_a_hub(monkeypatch, installed, engine):
+    # None in sys.modules makes the import fail, as for a package that is not there.
+    for name in ("ovos_padatious", "ovos_padatious.opm"):
+        monkeypatch.setitem(sys.modules, name, types.ModuleType(name) if installed else None)
+    assert f"ovos-{engine}-pipeline-plugin-high" in runner.pipeline("hub")
 
 
 def test_m2v_uses_the_hubs_prototype_stages_never_the_frozen_classifier():

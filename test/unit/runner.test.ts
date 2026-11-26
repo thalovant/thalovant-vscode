@@ -30,6 +30,10 @@ test("the skill starts and says what it is", { skip: !python }, () => {
   assert.deepEqual(info.langs, ["en-US", "fr-FR"]);
 });
 
+test("intents go through Padatious, the engine a hub runs", { skip: !python }, () => {
+  assert.ok(info.pipeline.includes("ovos-padatious-pipeline-plugin-high"), info.pipeline.join(", "));
+});
+
 test("an intent: speech, its SSML twin and a card", { skip: !python }, async () => {
   const turn = await runner.request<TurnResult>("utter", { text: "water the plants", session: "t1" });
   assert.equal(turn.ended, "handled");

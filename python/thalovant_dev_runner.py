@@ -170,15 +170,16 @@ def pipeline(name: str | list[str]) -> list[str]:
     intent that answers here would never answer there. "hub-m2v" adds the
     hub's model2vec prototype stages (Thalovant's encoder, downloaded on first
     use). "unpaired" adds Adapt, as unpaired runtimes keep it. Padacioso stands
-    in for Padatious only where the compiled engine is missing.
+    in for Padatious only where ovos-padatious is not installed.
     """
     if isinstance(name, list):
         return name
     name = PIPELINE_ALIASES.get(name, name)
     try:
-        import padatious  # noqa: F401
+        # The engine hubs run. Its package is ovos-padatious, imported as ovos_padatious.
+        import ovos_padatious.opm  # noqa: F401
         exact = "ovos-padatious-pipeline-plugin-high"
-    except Exception:  # noqa: BLE001 - no compiled engine: the pure-Python twin
+    except Exception:  # noqa: BLE001 - not installed, or broken: the pure-Python twin
         exact = "ovos-padacioso-pipeline-plugin-high"
     m2v = name == "hub-m2v"
     common = _installed_pipeline("ovos-common-query-pipeline-plugin")
