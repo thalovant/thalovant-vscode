@@ -1,5 +1,5 @@
-# Temporary, on this branch only: asks Open VSX for a trusted publishing token to prove the
-# registration. It publishes nothing and never prints the token.
+# Temporary, on this branch only: checks the OVSX_PAT secret and the trusted publisher
+# registration against Open VSX. It publishes nothing and never prints a token.
 permissions:
   contents: read
 
@@ -26,7 +26,12 @@ jobs:
         with:
           node-version: "22"
       - run: npm ci --ignore-scripts
+      - name: Check that the OVSX_PAT secret can publish to the namespace (nothing is published)
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: npx --no-install ovsx verify-pat thalovant
       - name: Request a trusted publishing token (nothing is published)
+        if: always()
         run: |
           node -e '
             const { Registry } = require("./node_modules/ovsx/lib/registry");
